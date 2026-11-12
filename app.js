@@ -947,6 +947,7 @@ const app = {
     if (step.type === "quiz") {
       const q = step.data;
       const isDone = !!this.progress.completedQuizzes[q.id];
+      const questionTitle = q.question || q.q || "";
       container.innerHTML = `
         <div class="apple-card">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
@@ -956,7 +957,7 @@ const app = {
             </span>
           </div>
 
-          <div class="quiz-question-title">${this.escapeHtml(q.question)}</div>
+          <div class="quiz-question-title">${this.escapeHtml(questionTitle)}</div>
 
           <div class="quiz-options-list" id="ui-quiz-opts">
             ${q.options.map((opt, oIdx) => `

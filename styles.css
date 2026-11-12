@@ -335,10 +335,12 @@ body {
 .subject-segmented-control {
   display: flex;
   background: rgba(0, 0, 0, 0.05);
-  padding: 4px;
+  padding: 3px;
   border-radius: 12px;
-  margin-bottom: 1.15rem;
-  gap: 4px;
+  margin-bottom: 1rem;
+  gap: 3px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 body[data-theme="dark"] .subject-segmented-control {
@@ -347,19 +349,27 @@ body[data-theme="dark"] .subject-segmented-control {
 
 .subject-segment-btn {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  padding: 0.55rem 0.65rem;
+  gap: 0.35rem;
+  padding: 0.5rem 0.4rem;
   border-radius: 9px;
   border: none;
   background: transparent;
   color: var(--apple-text-sec);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.subject-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .subject-segment-btn:hover {
