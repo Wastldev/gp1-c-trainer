@@ -2012,6 +2012,62 @@ const app = {
     }
   },
 
+
+  // ==========================================================================
+  // EXPORT & IMPORT SAVE CODES (LAPTOP <-> PC SYNC)
+  // ==========================================================================
+  exportSaveCode() {
+    try {
+      const dataStr = JSON.stringify(this.users);
+      const b64 = btoa(unescape(encodeURIComponent(dataStr)));
+      navigator.clipboard.writeText(b64).then(() => {
+        this.showToast("📋 Spielstand in Zwischenablage kopiert!");
+      }).catch(() => {
+        prompt("Kopiere diesen Spielstand-Code mit Strg+C:", b64);
+      });
+    } catch (e) {
+      this.showToast("Fehler beim Exportieren");
+    }
+  },
+
+  importSaveCode() {
+    const box = document.getElementById("ui-save-code-box");
+    if (box) {
+      box.classList.remove("hidden");
+      document.getElementById("ui-save-code-text").focus();
+    }
+  },
+
+  applyImportedSaveCode() {
+    const textEl = document.getElementById("ui-save-code-text");
+    const raw = (textEl ? textEl.value : "").trim();
+    if (!raw) {
+      this.showToast("Bitte erst den kopierten Code einfügen!");
+      return;
+    }
+    try {
+      let jsonStr = raw;
+      if (!raw.startsWith("{")) {
+        jsonStr = decodeURIComponent(escape(atob(raw)));
+      }
+      const parsed = JSON.parse(jsonStr);
+      if (parsed && (parsed.sebastian || parsed.kollege)) {
+        this.mergeAllUsers(parsed);
+        this.saveProgress(true);
+        this.renderSidebar();
+        this.renderOverviewGrid();
+        this.showToast("🎉 Spielstand erfolgreich übertragen!");
+        const box = document.getElementById("ui-save-code-box");
+        if (box) box.classList.add("hidden");
+        if (textEl) textEl.value = "";
+      } else {
+        this.showToast("⚠️ Ungültiger Spielstand-Code!");
+      }
+    } catch (e) {
+      this.showToast("⚠️ Fehler: Code konnte nicht gelesen werden.");
+    }
+  },
+
   // ==========================================================================
   // OVERVIEW, MISTAKES, FLASHCARDS & SANDBOX
   // ==========================================================================

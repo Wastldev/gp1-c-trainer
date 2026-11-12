@@ -325,6 +325,31 @@ int main(void) {
               <div class="preview-palette" id="ui-theme-preview-palette"></div>
             </div>
           </div>
+        
+          <!-- GERÄTE-SYNCHRONISATION & BACKUP CARD -->
+          <div class="apple-card" style="margin-top: 1.5rem;">
+            <div class="card-eyebrow">Geräte-Synchronisation</div>
+            <h2>📲 Spielstand übertragen (Laptop ⇄ PC)</h2>
+            <p class="text-secondary">Übertrage deinen kompletten Fortschritt (XP, Level, gelöste Aufgaben und Profil) direkt per 1-Klick-Code zwischen Laptop und PC:</p>
+
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:1rem;">
+              <button type="button" class="apple-btn apple-btn-primary" onclick="app.exportSaveCode()">
+                📤 Spielstand kopieren
+              </button>
+              <button type="button" class="apple-btn apple-btn-secondary" onclick="app.importSaveCode()">
+                📥 Spielstand einfügen
+              </button>
+            </div>
+            <div id="ui-save-code-box" class="hidden" style="margin-top:1rem;">
+              <textarea id="ui-save-code-text" class="apple-code-editor" style="height:90px; font-size:0.8rem;" placeholder="Füge hier deinen kopierten Spielstand-Code ein..."></textarea>
+              <div style="margin-top:0.6rem;">
+                <button type="button" class="apple-btn apple-btn-success" onclick="app.applyImportedSaveCode()">
+                  ✓ Jetzt auf diesem PC aktivieren
+                </button>
+              </div>
+            </div>
+          </div>
+
         </section>
 
       </main>
