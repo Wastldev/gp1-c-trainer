@@ -180,7 +180,18 @@ const app = {
   },
 
   async loadProgress() {
-    // 1. Load from Browser localStorage first (instant)
+    // 0. Load bundled seed progress (latest_users.json) as robust fallback for new domains / devices
+    try {
+      const seedRes = await fetch("latest_users.json");
+      if (seedRes.ok) {
+        const seedData = await seedRes.json();
+        if (seedData && (seedData.sebastian || seedData.kollege)) {
+          this.mergeAllUsers(seedData);
+        }
+      }
+    } catch (_) {}
+
+    // 1. Load from Browser localStorage (instant)
     const localRaw = localStorage.getItem("gp1_users_v3");
     if (localRaw) {
       try { this.mergeAllUsers(JSON.parse(localRaw)); } catch (_) {}
