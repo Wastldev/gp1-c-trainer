@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>GP1 C-Trainer — THI</title>
+  <link rel="stylesheet" href="styles.css?v=9" />
+</head>
+<body>
+  <!-- NETFLIX / APPLE STYLE 1-CLICK PROFILE PICKER MODAL -->
+  <div id="ui-profile-modal" class="profile-modal-backdrop hidden">
+    <div class="profile-modal-card">
+      <div class="card-eyebrow">GP1 C-Trainer • Multi-Player Cloud</div>
+      <h2>Wer lernt gerade?</h2>
+      <p class="text-secondary">Wähle dein Profil mit 1 Klick. Eure Punkte, Kapitel und das Freundschafts-Duell werden automatisch synchronisiert.</p>
+
+      <div class="profile-cards-grid" id="ui-profile-picker-grid"></div>
+
+      <div class="profile-edit-box" id="ui-profile-edit-box">
+        <label class="profile-edit-label">Profil anpassen (Name, Emoji oder eigenes Foto):</label>
+        <div class="profile-edit-row">
+          <input type="text" id="ui-edit-name" class="apple-input-text" placeholder="Dein Name..." maxlength="18" />
+          <select id="ui-edit-avatar" class="apple-input-select" onchange="app.handleAvatarSelectChange()">
+            <option value="👨‍💻">👨‍💻 C-Coder</option>
+            <option value="🚀">🚀 Rakete</option>
+            <option value="🦊">🦊 Fuchs</option>
+            <option value="⚡">⚡ Blitz</option>
+            <option value="🐉">🐉 Drache</option>
+            <option value="🎓">🎓 Studi</option>
+            <option value="🦁">🦁 Löwe</option>
+            <option value="👾">👾 Gamer</option>
+          </select>
+          <label class="apple-btn apple-btn-secondary apple-btn-sm photo-upload-btn" title="Eigenes Foto hochladen">
+            📷 Foto
+            <input type="file" id="ui-edit-photo-input" accept="image/*" style="display:none;" onchange="app.handlePhotoUpload(event)" />
+          </label>
+          <button class="apple-btn apple-btn-primary apple-btn-sm" onclick="app.saveProfileCustomization()">Speichern</button>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        <button class="apple-btn apple-btn-primary apple-btn-lg" style="width: 100%;" onclick="app.closeProfileModal()">
+          Weiter zum Training →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE BACKDROP OVERLAY FOR SIDEBAR DRAWER -->
+  <div id="ui-sidebar-overlay" class="mobile-sidebar-overlay" onclick="app.toggleMobileMenu(false)"></div>
+
+  <div class="app-shell">
+
+    <!-- MOBILE TOP BAR -->
+    <header class="mobile-top-bar">
+      <div class="mobile-top-left" onclick="app.showWelcomeOverview()">
+        <div class="app-icon app-icon-sm">C</div>
+        <span class="mobile-brand-title">C-Trainer</span>
+      </div>
+      <div class="mobile-top-right">
+        <button class="mobile-top-btn" onclick="app.openProfileModal()" title="Profil wechseln">
+          <span id="ui-mobile-avatar">👨‍💻</span>
+        </button>
+        <button class="mobile-top-btn" onclick="app.toggleMobileMenu()" title="Menü öffnen" id="ui-mobile-menu-btn">
+          ☰
+        </button>
+      </div>
+    </header>
+
+    <!-- APPLE-STYLE SIDEBAR NAVIGATION -->
+    <aside class="sidebar" id="ui-sidebar">
+      <div class="sidebar-brand" onclick="app.showWelcomeOverview()">
+        <div class="app-icon">C</div>
+        <div>
+          <div class="brand-name">C-Trainer</div>
+          <div class="brand-caption">GP1 • Prof. Wamser</div>
+        </div>
+      </div>
+
+      <!-- ACTIVE PROFILE SWITCHER PILL -->
+      <div class="active-profile-bar" onclick="app.openProfileModal()" title="Profil wechseln oder Namen ändern">
+        <div class="active-profile-left">
+          <span class="active-profile-avatar" id="ui-active-avatar">👨‍💻</span>
+          <div>
+            <div class="active-profile-name" id="ui-active-name">Sebastian</div>
+            <div class="active-profile-sub">Aktives Profil</div>
+          </div>
+        </div>
+        <span class="profile-switch-btn">Wechseln ⇄</span>
+      </div>
+
+      <!-- GAMIFICATION MINI CARD IN SIDEBAR -->
+      <div class="user-status-card">
+        <div class="status-top">
+          <span class="level-tag" id="ui-level-badge">Level 1</span>
+          <span class="xp-label" id="ui-xp-text">0 XP</span>
+        </div>
+        <div class="apple-progress-track">
+          <div class="apple-progress-fill" id="ui-xp-fill" style="width: 0%"></div>
+        </div>
+        <div class="status-meta">
+          <span>🔥 Combo: <strong id="ui-combo">0x</strong></span>
+          <span id="ui-gcc-indicator" class="gcc-dot online" title="GCC-Compiler aktiv">● GCC bereit</span>
+        </div>
+      </div>
+
+      <!-- FRIENDSHIP DUEL / LIVE LEADERBOARD CARD -->
+      <div class="duel-card">
+        <div class="duel-header">
+          <span>🏆 FREUNDSCHAFTS-DUELL</span>
+          <button class="duel-sync-btn" onclick="app.syncCloudNow(true)" title="Spielstände jetzt synchronisieren">🔄 Sync</button>
+        </div>
+        <div id="ui-duel-list" class="duel-list"></div>
+      </div>
+
+      <div class="sidebar-section-label">DEIN LERNPFAD (SCHRITT FÜR SCHRITT)</div>
+      <nav class="chapter-list" id="ui-chapter-list"></nav>
+
+      <div class="sidebar-section-label" style="margin-top: 1.25rem;">WERKZEUGE & EXTRAS</div>
+      <nav class="tools-list">
+        <button class="tool-item" id="nav-tool-mistakes" onclick="app.openTool('mistakes')">
+          <span class="tool-icon">🔁</span>
+          <span>Fehler-Training</span>
+          <span class="badge-count" id="ui-mistakes-count">0</span>
+        </button>
+        <button class="tool-item" id="nav-tool-flashcards" onclick="app.openTool('flashcards')">
+          <span class="tool-icon">🃏</span>
+          <span>Karteikarten</span>
+        </button>
+        <button class="tool-item" id="nav-tool-sandbox" onclick="app.openTool('sandbox')">
+          <span class="tool-icon">🔬</span>
+          <span>C-Labor & Speicher</span>
+        </button>
+        <button class="tool-item" id="nav-tool-settings" onclick="app.openTool('settings')">
+          <span class="tool-icon">🎨</span>
+          <span>Design & Farben</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="main-area">
+
+      <!-- STICKY GLASS TOP HEADER FOR GUIDED STEP PROGRESS -->
+      <header class="glass-header" id="ui-step-header">
+        <div class="header-left">
+          <span class="header-chapter-tag" id="ui-header-chapter">Kapitel 1</span>
+          <h2 class="header-title" id="ui-header-title">Denken wie ein Programmierer</h2>
+        </div>
+
+        <div class="header-Step-progress" id="ui-step-dots"></div>
+
+        <div class="header-right">
+          <span class="step-counter-label" id="ui-step-counter">Schritt 1 von 9</span>
+          <button class="header-theme-btn" onclick="app.openTool('settings')" title="Farbschema & Darkmode anpassen">🎨 Design</button>
+        </div>
+      </header>
+
+      <!-- DYNAMIC CONTENT STAGE (ONE FOCUSED CARD AT A TIME) -->
+      <main class="stage-viewport">
+
+        <!-- VIEW 1: GUIDED STEP PLAYER (DEFAULT & MAIN EXPERIENCE) -->
+        <section id="view-player" class="view-section active">
+          <div id="ui-step-card-container" class="step-card-wrapper"></div>
+        </section>
+
+        <!-- VIEW 2: WELCOME / START OVERVIEW -->
+        <section id="view-overview" class="view-section">
+          <div class="apple-hero-card">
+            <div class="hero-eyebrow">Grundlagen der Programmierung 1 • THI</div>
+            <h1>So einfach lernst du C.</h1>
+            <p class="hero-lead">Kein Suchen, kein Rätseln: Wir gehen gemeinsam <strong>Schritt für Schritt</strong> durch die Vorlesungsfolien von Prof. Wamser. Du liest eine kurze Erklärung, beantwortest direkt eine Frage dazu, sortierst ein Code-Puzzle und probierst es live aus.</p>
+            <div class="hero-cta-row">
+              <button class="apple-btn apple-btn-primary apple-btn-lg" onclick="app.continueLearning()">
+                ▶️ Jetzt genau da starten, wo du bist
+              </button>
+            </div>
+          </div>
+
+          <div class="how-it-works-row">
+            <div class="how-card">
+              <div class="how-num">1</div>
+              <h4>Kurze Erklärung lesen</h4>
+              <p>Jedes Thema aus dem Skript in verständlichem Deutsch – ohne Fachchinesisch.</p>
+            </div>
+            <div class="how-card">
+              <div class="how-num">2</div>
+              <h4>Sofort-Quiz lösen</h4>
+              <p>Nach jeder Erklärung prüfst du mit 1 Klick, ob du das Prinzip verstanden hast.</p>
+            </div>
+            <div class="how-card">
+              <div class="how-num">3</div>
+              <h4>Code-Puzzle sortieren</h4>
+              <p>Baue fertige Code-Zeilen per Klick zusammen, bevor du selbst tippen musst.</p>
+            </div>
+            <div class="how-card">
+              <div class="how-num">4</div>
+              <h4>Live in C ausprobieren</h4>
+              <p>Starte echten C-Code mit einem Klick und lass dir Fehler auf Deutsch erklären.</p>
+            </div>
+          </div>
+
+          <h3 class="overview-subtitle">Alle 8 Kapitel aus deinen Vorlesungsskripten</h3>
+          <div id="ui-overview-chapters" class="overview-chapters-grid"></div>
+        </section>
+
+        <!-- VIEW 3: MISTAKES / SPACED REPETITION -->
+        <section id="view-mistakes" class="view-section">
+          <div class="apple-card">
+            <div class="card-eyebrow">Wissenschaftliches Wiederholen (Spaced Repetition)</div>
+            <h2>🔁 Dein Fehler-Training</h2>
+            <p class="text-secondary">Alle Quizfragen, bei denen du dir noch unsicher warst, landen automatisch hier. Sobald du sie richtig beantwortest, verschwinden sie aus der Liste!</p>
+            <div id="ui-mistake-deck" style="margin-top: 1.5rem;"></div>
+          </div>
+        </section>
+
+        <!-- VIEW 4: FLASHCARDS -->
+        <section id="view-flashcards" class="view-section">
+          <div class="apple-card">
+            <div class="card-eyebrow">Active Recall Training</div>
+            <h2>🃏 Prüfungs-Karteikarten (GP1)</h2>
+            <p class="text-secondary">Überlege dir die Antwort kurz im Kopf und klicke dann auf die Karte, um sie umzudrehen.</p>
+
+            <div class="apple-flashcard" id="ui-flashcard" onclick="app.flipFlashcard()">
+              <div class="fc-top-row">
+                <span class="fc-badge" id="ui-fc-tag">Kapitel 1</span>
+                <span class="fc-counter" id="ui-fc-counter">1 / 11</span>
+              </div>
+              <div class="fc-question" id="ui-fc-front"></div>
+              <div class="fc-answer hidden" id="ui-fc-back"></div>
+              <div class="fc-footer-hint">👆 Klicken zum Umdrehen</div>
+            </div>
+
+            <div class="step-nav-bar">
+              <button class="apple-btn apple-btn-secondary" onclick="app.prevFlashcard()">← Vorherige Karte</button>
+              <button class="apple-btn apple-btn-primary" onclick="app.nextFlashcard()">Nächste Karte →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 5: FREE C SANDBOX & RAM VISUALIZER -->
+        <section id="view-sandbox" class="view-section">
+          <div class="apple-card" style="margin-bottom: 1.5rem;">
+            <div class="card-eyebrow">Speicher verstehen (Folie 152–159)</div>
+            <h2>🔬 Interaktiver String- & RAM-Visualizer</h2>
+            <p class="text-secondary">Tippe ein Wort ein und sieh live, wie C jedes Zeichen samt dem unsichtbaren Nullbyte <code>'\0'</code> im Arbeitsspeicher ablegt:</p>
+            <div class="ram-input-bar">
+              <code>char wort[] = </code>
+              <input type="text" id="ui-ram-input" value="ENTE" maxlength="14" oninput="app.updateRamVisualizer()" />
+              <span id="ui-ram-summary" class="ram-pill-info"></span>
+            </div>
+            <div id="ui-ram-cells" class="memory-boxes"></div>
+          </div>
+
+          <div class="apple-card">
+            <div class="card-eyebrow">Freies Experimentieren</div>
+            <h2>🧪 Freies C-Labor (mit echtem GCC-Compiler)</h2>
+            <p class="text-secondary">Probiere eigenen Code aus deinen Vorlesungsfolien direkt aus.</p>
+            <div class="ide-split">
+              <div class="ide-pane">
+                <div class="ide-pane-header">
+                  <span><strong>sandbox.c</strong></span>
+                  <select id="ui-free-std" class="apple-select">
+                    <option value="gnu23">Standard: C23</option>
+                    <option value="gnu17">Standard: C17</option>
+                  </select>
+                </div>
+                <textarea id="ui-free-code" class="apple-code-editor" spellcheck="false">#include <stdio.h>
+
+int main(void) {
+    bool cMachtSpass = true;
+    if (cMachtSpass) {
+        printf("Hallo aus dem freien C-Labor!\\n");
+    }
+    return 0;
+}</textarea>
+                <div class="stdin-row">
+                  <label>Konsolen-Eingabe (<code>stdin</code>):</label>
+                  <input type="text" id="ui-free-stdin" placeholder="Optional für scanf..." />
+                </div>
+                <div style="margin-top: 0.85rem;">
+                  <button class="apple-btn apple-btn-primary" onclick="app.runFreeCode()">▶️ Code ausführen</button>
+                </div>
+              </div>
+              <div class="ide-pane">
+                <div class="ide-pane-header">
+                  <span><strong>Terminal-Ausgabe</strong></span>
+                </div>
+                <pre id="ui-free-output" class="apple-terminal">Bereit.</pre>
+                <div id="ui-free-hints" class="compiler-hints"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 6: DESIGN & THEMES SETTINGS -->
+        <section id="view-settings" class="view-section">
+          <div class="apple-card">
+            <div class="card-eyebrow">Persönliche Einstellungen</div>
+            <h2>🎨 Design & Farbthemen</h2>
+            <p class="text-secondary">Wähle dein bevorzugtes Farbschema aus. Alle Pastell-Themen und der Darkmode sind so optimiert, dass Code und Texte gestochen scharf und augenfreundlich lesbar bleiben.</p>
+
+            <div class="theme-section-title">Wähle deinen Style:</div>
+            <div class="theme-presets-grid" id="ui-theme-presets-grid"></div>
+
+            <div class="theme-preview-box">
+              <span class="preview-badge">Live-Vorschau</span>
+              <h4>So wirkt die App mit dem ausgewählten Farbschema</h4>
+              <p>Hintergründe, Buttons, Menüleisten und Akzentfarben passen sich sofort in Echtzeit an.</p>
+              <div class="preview-palette" id="ui-theme-preview-palette"></div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- NATIVE-APP STYLE BOTTOM TAB BAR (MOBILE ONLY) -->
+  <nav class="mobile-tab-bar" id="ui-mobile-tab-bar">
+    <button class="mobile-tab-item active" id="tab-btn-learn" onclick="app.mobileSwitchTab('learn')">
+      <span class="tab-icon">📖</span>
+      <span class="tab-label">Lernen</span>
+    </button>
+    <button class="mobile-tab-item" id="tab-btn-mistakes" onclick="app.mobileSwitchTab('mistakes')">
+      <span class="tab-icon">🔁</span>
+      <span class="tab-label">Fehler</span>
+    </button>
+    <button class="mobile-tab-item" id="tab-btn-flashcards" onclick="app.mobileSwitchTab('flashcards')">
+      <span class="tab-icon">🃏</span>
+      <span class="tab-label">Karten</span>
+    </button>
+    <button class="mobile-tab-item" id="tab-btn-sandbox" onclick="app.mobileSwitchTab('sandbox')">
+      <span class="tab-icon">🔬</span>
+      <span class="tab-label">C-Labor</span>
+    </button>
+    <button class="mobile-tab-item" id="tab-btn-chapters" onclick="app.mobileSwitchTab('chapters')">
+      <span class="tab-icon">📑</span>
+      <span class="tab-label">Kapitel</span>
+    </button>
+  </nav>
+
+  <!-- APPLE-STYLE FLOATING NOTIFICATION PILL -->
+  <div id="ui-toast" class="apple-toast hidden"></div>
+
+  <script src="curriculum.js?v=11"></script>
+  <script src="app.js?v=12"></script>
+</body>
+</html>
