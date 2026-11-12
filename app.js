@@ -54,6 +54,13 @@ const app = {
       dots: ["#141416", "#1e1e22", "#2997ff"]
     },
     {
+      id: "dark-rose",
+      name: "Dark Rosé",
+      icon: "🌹",
+      desc: "Elegantes Tiefschwarz mit sanften Rosé- & Kirschblüten-Akzenten für lange Nächte.",
+      dots: ["#0f0a0d", "#191216", "#fb7185"]
+    },
+    {
       id: "pastel-lavender",
       name: "Pastell Lavendel",
       icon: "🪻",
