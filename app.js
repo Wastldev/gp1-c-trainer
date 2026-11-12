@@ -237,23 +237,23 @@ const app = {
   },
 
   async refreshBackgroundSync() {
-    // If user has never loaded seed or local storage is empty, seed it
-    const hasLocal = !!localStorage.getItem("gp1_users_v3");
-    if (!hasLocal) {
-      try {
-        const seedRes = await fetch("latest_users.json");
-        if (seedRes.ok) {
-          const seedData = await seedRes.json();
-          if (seedData && (seedData.sebastian || seedData.kollege)) {
-            this.mergeAllUsers(seedData);
-            this.progress = this.users[this.currentUserId];
-            localStorage.setItem("gp1_users_v3", JSON.stringify(this.users));
-            this.renderSidebar();
+    // ALWAYS load and merge latest_users.json so fresh seed updates are received even if local dummy data exists
+    try {
+      const seedRes = await fetch("latest_users.json?t=" + Date.now());
+      if (seedRes.ok) {
+        const seedData = await seedRes.json();
+        if (seedData && (seedData.sebastian || seedData.kollege)) {
+          this.mergeAllUsers(seedData);
+          this.progress = this.users[this.currentUserId];
+          localStorage.setItem("gp1_users_v3", JSON.stringify(this.users));
+          this.renderSidebar();
+          this.renderOverviewGrid();
+          if ((this.progress.xp || 0) > 0 && this.currentChapterIdx === 0 && this.currentStepIdx === 0) {
             this.openChapter(this.progress.lastChapterIdx || 0, this.progress.lastStepIdx || 0);
           }
         }
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
 
     // Ping cloud in background
     await this.syncCloudNow(false);
