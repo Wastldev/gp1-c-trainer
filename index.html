@@ -57,8 +57,8 @@
     <!-- MOBILE TOP BAR -->
     <header class="mobile-top-bar">
       <div class="mobile-top-left" onclick="app.showWelcomeOverview()">
-        <div class="app-icon app-icon-sm">C</div>
-        <span class="mobile-brand-title">C-Trainer</span>
+        <div class="app-icon app-icon-sm" id="ui-mobile-app-icon">C</div>
+        <span class="mobile-brand-title" id="ui-mobile-brand-title">C-Trainer</span>
       </div>
       <div class="mobile-top-right">
         <button class="mobile-top-btn" onclick="app.openProfileModal()" title="Profil wechseln">
@@ -73,11 +73,23 @@
     <!-- APPLE-STYLE SIDEBAR NAVIGATION -->
     <aside class="sidebar" id="ui-sidebar">
       <div class="sidebar-brand" onclick="app.showWelcomeOverview()">
-        <div class="app-icon">C</div>
+        <div class="app-icon" id="ui-sidebar-app-icon">C</div>
         <div>
-          <div class="brand-name">C-Trainer</div>
-          <div class="brand-caption">GP1 • Prof. Wamser</div>
+          <div class="brand-name" id="ui-sidebar-brand-name">THI Lernportal</div>
+          <div class="brand-caption" id="ui-sidebar-brand-caption">GP1 & INF1 • Prof. Wamser</div>
         </div>
+      </div>
+
+      <!-- SUBJECT TAB SELECTOR (PROGRAMMIEREN VS INFORMATIK) -->
+      <div class="subject-segmented-control">
+        <button type="button" class="subject-segment-btn active" id="btn-subject-c" onclick="app.switchSubject('c')">
+          <span class="subject-icon">💻</span>
+          <span class="subject-label">Programmieren</span>
+        </button>
+        <button type="button" class="subject-segment-btn" id="btn-subject-inf" onclick="app.switchSubject('inf')">
+          <span class="subject-icon">🧠</span>
+          <span class="subject-label">Informatik</span>
+        </button>
       </div>
 
       <!-- ACTIVE PROFILE SWITCHER PILL -->
@@ -346,7 +358,8 @@ int main(void) {
   <!-- APPLE-STYLE FLOATING NOTIFICATION PILL -->
   <div id="ui-toast" class="apple-toast hidden"></div>
 
-  <script src="curriculum.js?v=11"></script>
-  <script src="app.js?v=15"></script>
+  <script src="curriculum.js?v=12"></script>
+  <script src="curriculum_inf.js?v=1"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

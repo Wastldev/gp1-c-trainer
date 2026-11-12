@@ -22,6 +22,7 @@ function createDefaultUser(name, avatar) {
 }
 
 const app = {
+  currentSubject: "c", // "c" (Programmieren) or "inf" (Informatik)
   currentUserId: "sebastian",
   users: {
     sebastian: createDefaultUser("Sebastian", "👨‍💻"),
@@ -89,15 +90,66 @@ const app = {
     }
   ],
 
+  getWorlds() {
+    return this.currentSubject === "inf" ? (window.INF_WORLDS || []) : (window.GP1_WORLDS || []);
+  },
+
+  getFlashcards() {
+    return this.currentSubject === "inf" ? (window.INF_FLASHCARDS || []) : (window.GP1_FLASHCARDS || []);
+  },
+
+  switchSubject(subj) {
+    if (subj !== "c" && subj !== "inf") return;
+    this.currentSubject = subj;
+    localStorage.setItem("gp1_active_subject", subj);
+
+    // Update segmented buttons
+    const btnC = document.getElementById("btn-subject-c");
+    const btnInf = document.getElementById("btn-subject-inf");
+    if (btnC) btnC.classList.toggle("active", subj === "c");
+    if (btnInf) btnInf.classList.toggle("active", subj === "inf");
+
+    // Update branding
+    const sideIcon = document.getElementById("ui-sidebar-app-icon");
+    const sideBrand = document.getElementById("ui-sidebar-brand-name");
+    const sideSub = document.getElementById("ui-sidebar-brand-caption");
+    const mobIcon = document.getElementById("ui-mobile-app-icon");
+    const mobBrand = document.getElementById("ui-mobile-brand-title");
+
+    if (subj === "inf") {
+      if (sideIcon) sideIcon.textContent = "INF";
+      if (sideBrand) sideBrand.textContent = "Informatik 1";
+      if (sideSub) sideSub.textContent = "Theorie & Digitaltechnik";
+      if (mobIcon) mobIcon.textContent = "INF";
+      if (mobBrand) mobBrand.textContent = "INF1";
+    } else {
+      if (sideIcon) sideIcon.textContent = "C";
+      if (sideBrand) sideBrand.textContent = "C-Trainer";
+      if (sideSub) sideSub.textContent = "GP1 • Prof. Wamser";
+      if (mobIcon) mobIcon.textContent = "C";
+      if (mobBrand) mobBrand.textContent = "C-Trainer";
+    }
+
+    this.flashcardIdx = 0;
+    this.openChapter(0, 0);
+    this.renderSidebar();
+    this.renderOverviewGrid();
+    this.showToast(subj === "inf" ? "🧠 Zu Informatik 1 gewechselt" : "💻 Zu C-Programmieren gewechselt");
+  },
+
   async init() {
     // 1. Restore saved theme instantly
     const savedTheme = localStorage.getItem("gp1_active_theme") || "apple-light";
     this.setTheme(savedTheme, false);
 
-    // 2. Restore active profile instantly
+    // 2. Restore active profile and subject instantly
     const savedUserId = localStorage.getItem("gp1_active_user_id");
     if (savedUserId && (savedUserId === "sebastian" || savedUserId === "kollege")) {
       this.currentUserId = savedUserId;
+    }
+    const savedSubject = localStorage.getItem("gp1_active_subject");
+    if (savedSubject === "inf" || savedSubject === "c") {
+      this.currentSubject = savedSubject;
     }
 
     // 3. Fast sync from localStorage first (0ms latency, instant render!)
@@ -567,27 +619,32 @@ const app = {
   },
 
   getTotalTasksInApp() {
-    return window.GP1_WORLDS.reduce((acc, w) => acc + w.quizzes.length + 2, 0);
+    const cTotal = (window.GP1_WORLDS || []).reduce((acc, w) => acc + (w.quizzes ? w.quizzes.length : 0) + 2, 0);
+    const infTotal = (window.INF_WORLDS || []).reduce((acc, w) => acc + (w.quizzes ? w.quizzes.length : 0) + 2, 0);
+    return cTotal + infTotal;
   },
 
   // ==========================================================================
   // BUILD LINEAR STEP SEQUENCE FOR A CHAPTER
   // ==========================================================================
   buildStepsForChapter(w) {
+    if (!w) return [];
     const steps = [];
-    const maxLen = Math.max(w.lessons.length, w.quizzes.length);
+    const lessons = w.lessons || [];
+    const quizzes = w.quizzes || [];
+    const maxLen = Math.max(lessons.length, quizzes.length);
 
     for (let i = 0; i < maxLen; i++) {
-      if (i < w.lessons.length) {
+      if (i < lessons.length) {
         steps.push({
           type: "lesson",
           lessonIdx: i,
-          data: w.lessons[i],
+          data: lessons[i],
           done: true
         });
       }
-      if (i < w.quizzes.length) {
-        const q = w.quizzes[i];
+      if (i < quizzes.length) {
+        const q = quizzes[i];
         steps.push({
           type: "quiz",
           quizIdx: i,
@@ -689,9 +746,10 @@ const app = {
       }).join("");
     }
 
-    // Chapter list
+    // Chapter list for current subject
+    const worlds = this.getWorlds();
     const listEl = document.getElementById("ui-chapter-list");
-    listEl.innerHTML = window.GP1_WORLDS.map((w, idx) => {
+    listEl.innerHTML = worlds.map((w, idx) => {
       const isCurrent = idx === this.currentChapterIdx;
       const isDone = this.isChapterCompleted(w);
       const shortTitle = w.title.replace(/^Welt \d+:\s*/, "");
@@ -783,8 +841,10 @@ const app = {
 
   openChapter(chapIdx, stepIdx = 0) {
     this.toggleMobileMenu(false);
-    this.currentChapterIdx = chapIdx;
-    const w = window.GP1_WORLDS[chapIdx];
+    const worlds = this.getWorlds();
+    if (!worlds || worlds.length === 0) return;
+    this.currentChapterIdx = Math.max(0, Math.min(chapIdx, worlds.length - 1));
+    const w = worlds[this.currentChapterIdx];
     this.chapterSteps = this.buildStepsForChapter(w);
     this.currentStepIdx = Math.max(0, Math.min(stepIdx, this.chapterSteps.length - 1));
 
@@ -805,9 +865,10 @@ const app = {
   },
 
   nextStep() {
+    const worlds = this.getWorlds();
     if (this.currentStepIdx < this.chapterSteps.length - 1) {
       this.goToStep(this.currentStepIdx + 1);
-    } else if (this.currentChapterIdx < window.GP1_WORLDS.length - 1) {
+    } else if (this.currentChapterIdx < worlds.length - 1) {
       this.openChapter(this.currentChapterIdx + 1, 0);
       this.showToast(`🎉 Willkommen in Kapitel ${this.currentChapterIdx + 1}!`);
     } else {
@@ -826,13 +887,15 @@ const app = {
   // RENDER THE CURRENT FOCUSED STEP CARD
   // ==========================================================================
   renderCurrentStep() {
-    const w = window.GP1_WORLDS[this.currentChapterIdx];
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
     this.chapterSteps = this.buildStepsForChapter(w);
     const step = this.chapterSteps[this.currentStepIdx];
     const total = this.chapterSteps.length;
-    const shortTitle = w.title.replace(/^Welt \d+:\s*/, "");
+    const shortTitle = (w.title || "").replace(/^(Welt|Kapitel)\s*\d+:\s*/i, "");
 
-    document.getElementById("ui-header-chapter").textContent = `Kapitel ${this.currentChapterIdx + 1} von ${window.GP1_WORLDS.length}`;
+    const subjPrefix = this.currentSubject === "inf" ? "Informatik • " : "";
+    document.getElementById("ui-header-chapter").textContent = `${subjPrefix}Kapitel ${this.currentChapterIdx + 1} von ${worlds.length}`;
     document.getElementById("ui-header-title").textContent = shortTitle;
     document.getElementById("ui-step-counter").textContent = `Schritt ${this.currentStepIdx + 1} von ${total}`;
 
@@ -959,12 +1022,13 @@ const app = {
     // 4. BOSS QUEST (LIVE C) STEP
     if (step.type === "boss") {
       const b = step.data;
-      const hasNextChap = this.currentChapterIdx < window.GP1_WORLDS.length - 1;
+      const worlds = this.getWorlds();
+      const hasNextChap = this.currentChapterIdx < worlds.length - 1;
       container.innerHTML = `
         <div class="apple-card">
           <span class="card-eyebrow boss-eyebrow">🐉 Schritt ${this.currentStepIdx + 1}: Praxis-Aufgabe im Live C-Labor</span>
           <h2>${this.escapeHtml(b.title)}</h2>
-          <p class="text-secondary" style="white-space:pre-line; margin-bottom:1rem;">${this.escapeHtml(b.description)}</p>
+          <p class="text-secondary" style="white-space:pre-line; margin-bottom:1rem;">${this.escapeHtml(b.description || b.task)}</p>
 
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
             <button class="apple-btn apple-btn-sm apple-btn-secondary" onclick="app.resetBossCode()">↺ Starter-Code wiederherstellen</button>
@@ -1429,10 +1493,11 @@ const app = {
     });
 
     fb.classList.remove("hidden", "success", "error");
+    const explanationText = q.explanation || q.why || "";
     if (selectedIdx === q.correct) {
       this.combo++;
       fb.classList.add("success");
-      fb.innerHTML = `<strong>✓ Richtig! (${this.combo}x Combo)</strong><br>${this.escapeHtml(q.explanation)}`;
+      fb.innerHTML = `<strong>✓ Richtig! (${this.combo}x Combo)</strong><br>${this.escapeHtml(explanationText)}`;
 
       if (!this.progress.completedQuizzes[q.id]) {
         this.progress.completedQuizzes[q.id] = true;
@@ -1442,7 +1507,7 @@ const app = {
     } else {
       this.combo = 0;
       fb.classList.add("error");
-      fb.innerHTML = `<strong>✕ Nicht ganz!</strong> (In dein 🔁 <em>Fehler-Training</em> aufgenommen)<br>${this.escapeHtml(q.explanation)}`;
+      fb.innerHTML = `<strong>✕ Nicht ganz!</strong> (In dein 🔁 <em>Fehler-Training</em> aufgenommen)<br>${this.escapeHtml(explanationText)}`;
       if (!this.progress.mistakeQueue.includes(q.id)) {
         this.progress.mistakeQueue.push(q.id);
       }
@@ -1452,7 +1517,9 @@ const app = {
   },
 
   resetParsons() {
-    const w = window.GP1_WORLDS[this.currentChapterIdx];
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
+    if (!w || !w.parsons) return;
     const items = w.parsons.lines.map((line, i) => ({ id: i, text: line }));
     for (let i = items.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -1683,7 +1750,8 @@ const app = {
   },
 
   checkParsons() {
-    const w = window.GP1_WORLDS[this.currentChapterIdx];
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
     const fb = document.getElementById("ui-parsons-feedback");
     fb.classList.remove("hidden", "success", "error");
 
@@ -1717,24 +1785,32 @@ const app = {
   },
 
   resetBossCode() {
-    const w = window.GP1_WORLDS[this.currentChapterIdx];
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
     document.getElementById("ui-boss-code").value = w.boss.starterCode;
   },
 
   toggleBossHint() {
-    const w = window.GP1_WORLDS[this.currentChapterIdx];
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
     const box = document.getElementById("ui-boss-hint-box");
-    box.innerHTML = `<strong>💡 Hinweis:</strong> ${this.escapeHtml(w.boss.hint)}`;
+    box.innerHTML = `<strong>💡 Hinweis:</strong> ${this.escapeHtml(w.boss.hint || 'Schau dir die Aufgabenstellung und Eingabe noch einmal genau an!')}`;
     box.classList.toggle("hidden");
   },
 
   showBossSolution() {
-    const w = window.GP1_WORLDS[this.currentChapterIdx];
-    document.getElementById("ui-boss-code").value = w.boss.solution;
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
+    if (w.boss.solution) {
+      document.getElementById("ui-boss-code").value = w.boss.solution;
+    } else {
+      this.showToast("Für diese Aufgabe ist der Starter-Code bereits die Vorlage!");
+    }
   },
 
   async runBossCode() {
-    const w = window.GP1_WORLDS[this.currentChapterIdx];
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
     const code = document.getElementById("ui-boss-code").value;
     const stdin = document.getElementById("ui-boss-stdin").value + "\n";
     const std = document.getElementById("ui-boss-std").value;
@@ -1800,15 +1876,18 @@ const app = {
   renderOverviewGrid() {
     const el = document.getElementById("ui-overview-chapters");
     if (!el) return;
-    el.innerHTML = window.GP1_WORLDS.map((w, idx) => {
-      const shortTitle = w.title.replace(/^Welt \d+:\s*/, "");
+    const worlds = this.getWorlds();
+    el.innerHTML = worlds.map((w, idx) => {
+      const shortTitle = (w.title || "").replace(/^(Welt|Kapitel)\s*\d+:\s*/i, "");
+      const icon = w.icon || (this.currentSubject === "inf" ? "🧠" : "💻");
+      const sub = w.subtitle || (w.badge ? `Abzeichen: ${w.badge}` : "");
       return `
         <div class="overview-chap-card" onclick="app.openChapter(${idx}, 0)">
-          <div style="font-size:2rem;">${w.icon}</div>
+          <div style="font-size:2rem;">${icon}</div>
           <div>
             <div style="font-size:0.75rem; font-weight:700; color:#0071e3;">KAPITEL ${idx + 1} • ${this.getChapterProgressText(w)}</div>
             <div style="font-weight:700; font-size:1rem;">${this.escapeHtml(shortTitle)}</div>
-            <div style="font-size:0.8rem; color:#6e6e73;">${this.escapeHtml(w.subtitle)}</div>
+            <div style="font-size:0.8rem; color:#6e6e73;">${this.escapeHtml(sub)}</div>
           </div>
         </div>
       `;
@@ -1831,8 +1910,9 @@ const app = {
     const qId = queue[0];
     let foundQ = null;
     let foundWorld = null;
-    for (const w of window.GP1_WORLDS) {
-      for (const q of w.quizzes) {
+    const allWorlds = [...(window.GP1_WORLDS || []), ...(window.INF_WORLDS || [])];
+    for (const w of allWorlds) {
+      for (const q of (w.quizzes || [])) {
         if (q.id === qId) { foundQ = q; foundWorld = w; break; }
       }
     }
@@ -1847,7 +1927,7 @@ const app = {
     container.innerHTML = `
       <div>
         <span class="card-eyebrow quiz-eyebrow">${foundWorld.title} (${queue.length} offen)</span>
-        <div class="quiz-question-title">${this.escapeHtml(foundQ.question)}</div>
+        <div class="quiz-question-title">${this.escapeHtml(foundQ.question || foundQ.q)}</div>
         <div class="quiz-options-list">
           ${foundQ.options.map((opt, idx) => `
             <button class="apple-quiz-option" onclick="app.answerMistake('${foundQ.id}', ${idx}, ${foundQ.correct})">
@@ -1873,10 +1953,12 @@ const app = {
   },
 
   renderFlashcard() {
-    const cards = window.GP1_FLASHCARDS;
+    const cards = this.getFlashcards();
+    if (!cards || cards.length === 0) return;
+    this.flashcardIdx = Math.max(0, Math.min(this.flashcardIdx, cards.length - 1));
     const card = cards[this.flashcardIdx];
     this.flashcardFlipped = false;
-    document.getElementById("ui-fc-tag").textContent = card.tag.replace("Welt", "Kapitel");
+    document.getElementById("ui-fc-tag").textContent = (card.tag || "").replace("Welt", "Kapitel");
     document.getElementById("ui-fc-front").textContent = card.q;
     const backEl = document.getElementById("ui-fc-back");
     backEl.textContent = card.a;
@@ -1897,7 +1979,8 @@ const app = {
   },
 
   nextFlashcard() {
-    const cards = window.GP1_FLASHCARDS;
+    const cards = this.getFlashcards();
+    if (!cards || cards.length === 0) return;
     this.flashcardIdx = (this.flashcardIdx + 1) % cards.length;
     this.renderFlashcard();
   },
