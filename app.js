@@ -121,11 +121,53 @@ const app = {
       this.openProfileModal();
     }
 
+    // Enable standard Tab key indentation in code editors
+    this.setupCodeEditorTabKey();
+
     // 5. Asynchronous background sync (seed & cloud) WITHOUT blocking the UI render
     this.refreshBackgroundSync();
 
     // Periodic live-sync every 30 seconds for the Friendship Duel leaderboard
     setInterval(() => this.syncCloudNow(false), 30000);
+  },
+
+  setupCodeEditorTabKey() {
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      const target = e.target;
+      if (!target || !target.classList || !target.classList.contains("apple-code-editor")) return;
+
+      e.preventDefault();
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const value = target.value;
+      const tabStr = "    "; // 4 spaces for standard C code indentation
+
+      if (e.shiftKey) {
+        // Shift + Tab: unindent current line or selected lines
+        const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+        if (value.substring(lineStart, lineStart + 4) === "    ") {
+          target.value = value.substring(0, lineStart) + value.substring(lineStart + 4);
+          target.selectionStart = Math.max(lineStart, start - 4);
+          target.selectionEnd = Math.max(lineStart, end - 4);
+        } else if (value.substring(lineStart, lineStart + 2) === "  ") {
+          target.value = value.substring(0, lineStart) + value.substring(lineStart + 2);
+          target.selectionStart = Math.max(lineStart, start - 2);
+          target.selectionEnd = Math.max(lineStart, end - 2);
+        } else if (value.substring(lineStart, lineStart + 1) === "\t") {
+          target.value = value.substring(0, lineStart) + value.substring(lineStart + 1);
+          target.selectionStart = Math.max(lineStart, start - 1);
+          target.selectionEnd = Math.max(lineStart, end - 1);
+        }
+      } else {
+        // Normal Tab: insert 4 spaces at cursor or replace selection
+        target.value = value.substring(0, start) + tabStr + value.substring(end);
+        target.selectionStart = target.selectionEnd = start + tabStr.length;
+      }
+
+      // Trigger input event for state tracking
+      target.dispatchEvent(new Event("input", { bubbles: true }));
+    });
   },
 
   loadLocalProgressSync() {
