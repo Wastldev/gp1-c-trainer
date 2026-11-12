@@ -90,35 +90,79 @@ const app = {
   ],
 
   async init() {
-    // Restore saved theme
+    // 1. Restore saved theme instantly
     const savedTheme = localStorage.getItem("gp1_active_theme") || "apple-light";
     this.setTheme(savedTheme, false);
 
-    // Restore last chosen profile on this device
+    // 2. Restore active profile instantly
     const savedUserId = localStorage.getItem("gp1_active_user_id");
     if (savedUserId && (savedUserId === "sebastian" || savedUserId === "kollege")) {
       this.currentUserId = savedUserId;
     }
 
-    await this.loadProgress();
+    // 3. Fast sync from localStorage first (0ms latency, instant render!)
+    this.loadLocalProgressSync();
+    this.progress = this.users[this.currentUserId];
+
+    // 4. Render UI immediately so the user never stares at an empty/loading screen
     this.renderSidebar();
     this.renderOverviewGrid();
     this.renderFlashcard();
     this.updateRamVisualizer();
     this.renderThemeSettings();
 
-    // Start directly in the guided Step-by-Step player at the active user's saved position
+    // Start directly in the guided Step-by-Step player at the saved position
     const startChap = this.progress.lastChapterIdx || 0;
     const startStep = this.progress.lastStepIdx || 0;
     this.openChapter(startChap, startStep);
 
-    // Show Netflix-style profile selector on first visit on a device so Sebastian & Kollege can pick with 1 click
+    // Show Netflix-style profile selector on very first visit
     if (!localStorage.getItem("gp1_profile_chosen_once")) {
       this.openProfileModal();
     }
 
-    // Background live-sync every 25 seconds for the Friendship Duel leaderboard
-    setInterval(() => this.syncCloudNow(false), 25000);
+    // 5. Asynchronous background sync (seed & cloud) WITHOUT blocking the UI render
+    this.refreshBackgroundSync();
+
+    // Periodic live-sync every 30 seconds for the Friendship Duel leaderboard
+    setInterval(() => this.syncCloudNow(false), 30000);
+  },
+
+  loadLocalProgressSync() {
+    const localRaw = localStorage.getItem("gp1_users_v3");
+    if (localRaw) {
+      try { this.mergeAllUsers(JSON.parse(localRaw)); } catch (_) {}
+    } else {
+      const legacy = localStorage.getItem("gp1_c_progress");
+      if (legacy) {
+        try {
+          this.users.sebastian = this.mergeSingleUser(this.users.sebastian, JSON.parse(legacy));
+        } catch (_) {}
+      }
+    }
+  },
+
+  async refreshBackgroundSync() {
+    // If user has never loaded seed or local storage is empty, seed it
+    const hasLocal = !!localStorage.getItem("gp1_users_v3");
+    if (!hasLocal) {
+      try {
+        const seedRes = await fetch("latest_users.json");
+        if (seedRes.ok) {
+          const seedData = await seedRes.json();
+          if (seedData && (seedData.sebastian || seedData.kollege)) {
+            this.mergeAllUsers(seedData);
+            this.progress = this.users[this.currentUserId];
+            localStorage.setItem("gp1_users_v3", JSON.stringify(this.users));
+            this.renderSidebar();
+            this.openChapter(this.progress.lastChapterIdx || 0, this.progress.lastStepIdx || 0);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Ping cloud in background
+    await this.syncCloudNow(false);
   },
 
   // ==========================================================================
@@ -240,7 +284,14 @@ const app = {
 
   async syncCloudNow(showFeedback = false) {
     try {
-      const res = await fetch(`https://ntfy.sh/${CLOUD_SYNC_TOPIC}/json?poll=1&since=48h`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout max
+
+      const res = await fetch(`https://ntfy.sh/${CLOUD_SYNC_TOPIC}/json?poll=1&since=24h`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
       if (res.ok) {
         const text = await res.text();
         const lines = text.trim().split("\n").filter(Boolean);
