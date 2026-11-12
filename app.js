@@ -619,8 +619,8 @@ const app = {
   },
 
   getTotalTasksInApp() {
-    const cTotal = (window.GP1_WORLDS || []).reduce((acc, w) => acc + (w.quizzes ? w.quizzes.length : 0) + 2, 0);
-    const infTotal = (window.INF_WORLDS || []).reduce((acc, w) => acc + (w.quizzes ? w.quizzes.length : 0) + 2, 0);
+    const cTotal = (window.GP1_WORLDS || []).reduce((acc, w) => acc + (w.quizzes ? w.quizzes.length : 0) + (w.parsons ? 1 : 0) + (w.boss || w.interactive ? 1 : 0), 0);
+    const infTotal = (window.INF_WORLDS || []).reduce((acc, w) => acc + (w.quizzes ? w.quizzes.length : 0) + (w.parsons ? 1 : 0) + (w.boss || w.interactive ? 1 : 0), 0);
     return cTotal + infTotal;
   },
 
@@ -654,33 +654,43 @@ const app = {
       }
     }
 
-    steps.push({
-      type: "parsons",
-      data: w.parsons,
-      done: !!this.progress.completedParsons[w.id]
-    });
+    if (w.parsons) {
+      steps.push({
+        type: "parsons",
+        data: w.parsons,
+        done: !!this.progress.completedParsons[w.id]
+      });
+    }
 
-    steps.push({
-      type: "boss",
-      data: w.boss,
-      done: !!this.progress.completedBosses[w.id]
-    });
+    if (w.interactive) {
+      steps.push({
+        type: "interactive",
+        data: w.interactive,
+        done: !!this.progress.completedBosses[w.id]
+      });
+    } else if (w.boss) {
+      steps.push({
+        type: "boss",
+        data: w.boss,
+        done: !!this.progress.completedBosses[w.id]
+      });
+    }
 
     return steps;
   },
 
   isChapterCompleted(w) {
-    const allQ = w.quizzes.every(q => this.progress.completedQuizzes[q.id]);
-    const pDone = !!this.progress.completedParsons[w.id];
-    const bDone = !!this.progress.completedBosses[w.id];
+    const allQ = (w.quizzes || []).every(q => this.progress.completedQuizzes[q.id]);
+    const pDone = !w.parsons || !!this.progress.completedParsons[w.id];
+    const bDone = (!w.boss && !w.interactive) || !!this.progress.completedBosses[w.id];
     return allQ && pDone && bDone;
   },
 
   getChapterProgressText(w) {
-    const total = w.quizzes.length + 2;
-    const done = w.quizzes.filter(q => this.progress.completedQuizzes[q.id]).length
-      + (this.progress.completedParsons[w.id] ? 1 : 0)
-      + (this.progress.completedBosses[w.id] ? 1 : 0);
+    const total = (w.quizzes ? w.quizzes.length : 0) + (w.parsons ? 1 : 0) + (w.boss || w.interactive ? 1 : 0);
+    const done = (w.quizzes || []).filter(q => this.progress.completedQuizzes[q.id]).length
+      + (w.parsons && this.progress.completedParsons[w.id] ? 1 : 0)
+      + ((w.boss || w.interactive) && this.progress.completedBosses[w.id] ? 1 : 0);
     return `${done}/${total} gelöst`;
   },
 
@@ -1020,7 +1030,67 @@ const app = {
       return;
     }
 
-    // 4. BOSS QUEST (LIVE C) STEP
+    // 4. INTERACTIVE EXERCISE STEP (THEORY / DIGITAL LOGIC)
+    if (step.type === "interactive") {
+      const it = step.data;
+      const isDone = !!this.progress.completedBosses[w.id];
+      const worlds = this.getWorlds();
+      const hasNextChap = this.currentChapterIdx < worlds.length - 1;
+
+      container.innerHTML = `
+        <div class="apple-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <span class="card-eyebrow boss-eyebrow">⚡ Schritt ${this.currentStepIdx + 1}: Interaktives Rechen- & Logik-Labor</span>
+            <span style="font-size:0.82rem; font-weight:600; color:${isDone ? '#248a3d' : '#6e6e73'}">
+              ${isDone ? '✓ Bereits gelöst' : '+120 XP'}
+            </span>
+          </div>
+
+          <h2>${this.escapeHtml(it.title)}</h2>
+          <p class="text-secondary" style="margin-bottom:1.25rem;">${this.escapeHtml(it.instruction)}</p>
+
+          <div class="interactive-trace-box" style="background:var(--bg-glass-card); border:1px solid var(--border-subtle); border-radius:14px; padding:1.25rem; display:flex; flex-direction:column; gap:0.85rem;">
+            ${(it.fields || []).map((f, fIdx) => `
+              <div class="interactive-field-row" style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                <label style="font-weight:600; font-size:0.95rem; color:var(--text-main); flex:1; min-width:240px;">
+                  ${this.escapeHtml(f.label)}
+                </label>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <input type="text"
+                         id="ui-it-input-${fIdx}"
+                         class="interactive-input"
+                         placeholder="${this.escapeHtml(f.placeholder || '')}"
+                         style="padding:0.6rem 0.85rem; border-radius:10px; border:1px solid var(--border-subtle); font-family:var(--font-mono); font-size:1rem; width:160px; outline:none; background:var(--bg-surface); color:var(--text-main);"
+                         onkeydown="if(event.key==='Enter') app.checkInteractiveTrace();" />
+                  <span id="ui-it-icon-${fIdx}" style="font-size:1.1rem; width:24px; text-align:center;"></span>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+
+          <div id="ui-interactive-feedback" class="apple-feedback hidden" style="margin-top:1rem;"></div>
+
+          <div style="display:flex; gap:0.75rem; margin-top:1.25rem; flex-wrap:wrap;">
+            <button class="apple-btn apple-btn-success apple-btn-lg" id="ui-interactive-submit" onclick="app.checkInteractiveTrace()">
+              ✓ Antworten überprüfen (+120 XP)
+            </button>
+            <button class="apple-btn apple-btn-secondary" onclick="app.showInteractiveSolution()">
+              💡 Musterlösung anzeigen
+            </button>
+          </div>
+
+          <div class="step-nav-bar">
+            <button class="apple-btn apple-btn-secondary" onclick="app.prevStep()">← Zurück</button>
+            <button class="apple-btn apple-btn-primary apple-btn-lg" onclick="app.nextStep()">
+              ${hasNextChap ? `Kapitel ${this.currentChapterIdx + 2} starten →` : '🎓 Zum Gesamt-Abschluss →'}
+            </button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // 5. BOSS QUEST (LIVE C) STEP
     if (step.type === "boss") {
       const b = step.data;
       const worlds = this.getWorlds();
@@ -1783,6 +1853,77 @@ const app = {
       }
       fb.innerHTML = `<strong>✕ Noch nicht ganz richtig.</strong> Prüfe Zeile <strong>#${firstWrong}</strong> in deiner Lösung!`;
     }
+  },
+
+  checkInteractiveTrace() {
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
+    if (!w || !w.interactive || !w.interactive.fields) return;
+
+    const fields = w.interactive.fields;
+    const fb = document.getElementById("ui-interactive-feedback");
+    fb.classList.remove("hidden", "success", "error");
+
+    let allCorrect = true;
+    let wrongCount = 0;
+
+    fields.forEach((f, idx) => {
+      const inputEl = document.getElementById(`ui-it-input-${idx}`);
+      const iconEl = document.getElementById(`ui-it-icon-${idx}`);
+      if (!inputEl) return;
+
+      const userVal = (inputEl.value || "").trim().toLowerCase().replace(/\s+/g, "");
+      const expectedVal = String(f.expected || "").trim().toLowerCase().replace(/\s+/g, "");
+
+      const isFieldOk = userVal === expectedVal;
+      if (isFieldOk) {
+        inputEl.style.borderColor = "#248a3d";
+        inputEl.style.backgroundColor = "rgba(52, 199, 89, 0.1)";
+        if (iconEl) iconEl.textContent = "✅";
+      } else {
+        allCorrect = false;
+        wrongCount++;
+        inputEl.style.borderColor = "#ff3b30";
+        inputEl.style.backgroundColor = "rgba(255, 59, 48, 0.1)";
+        if (iconEl) iconEl.textContent = "❌";
+      }
+    });
+
+    if (allCorrect) {
+      fb.classList.add("success");
+      fb.innerHTML = `<strong>🎉 Absolut genial!</strong> Alle Berechnungen stimmen haargenau!<br>${this.escapeHtml(w.interactive.explanation || '')}`;
+      if (!this.progress.completedBosses[w.id]) {
+        this.progress.completedBosses[w.id] = true;
+        this.addXP(120, "Interaktives Logik-Labor gemeistert!");
+      }
+      this.saveProgress(true);
+      this.renderSidebar();
+    } else {
+      fb.classList.add("error");
+      fb.innerHTML = `<strong>Noch nicht ganz:</strong> ${wrongCount} Feld(er) stimmen noch nicht. Überprüfe die rot markierten Eingaben noch einmal!`;
+    }
+  },
+
+  showInteractiveSolution() {
+    const worlds = this.getWorlds();
+    const w = worlds[this.currentChapterIdx];
+    if (!w || !w.interactive || !w.interactive.fields) return;
+
+    w.interactive.fields.forEach((f, idx) => {
+      const inputEl = document.getElementById(`ui-it-input-${idx}`);
+      const iconEl = document.getElementById(`ui-it-icon-${idx}`);
+      if (inputEl) {
+        inputEl.value = f.expected;
+        inputEl.style.borderColor = "#0071e3";
+        inputEl.style.backgroundColor = "rgba(0, 113, 227, 0.08)";
+      }
+      if (iconEl) iconEl.textContent = "💡";
+    });
+
+    const fb = document.getElementById("ui-interactive-feedback");
+    fb.classList.remove("hidden", "error");
+    fb.classList.add("success");
+    fb.innerHTML = `<strong>💡 Musterlösung eingetragen:</strong><br>${this.escapeHtml(w.interactive.explanation || '')}`;
   },
 
   resetBossCode() {

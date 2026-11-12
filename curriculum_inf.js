@@ -1,5 +1,9 @@
 // ============================================================================
 // INFORMATIK 1 (INF1) — CURRICULUM (PROF. WAMSER • THI)
+// Interaktive Prüfungsformate:
+// - Quizzes (Active Recall / Multiple-Choice)
+// - Parsons-Puzzles (Verfahren & Schrittabfolgen ordnen)
+// - Interactive Lab (Truth Tables, Bit-Converter, KV-Maps, Schaltungsanalyse)
 // ============================================================================
 
 window.INF_FLASHCARDS = [
@@ -81,6 +85,31 @@ window.INF_WORLDS = [
     "num": 1,
     "title": "Algorithmen & Informatikbegriff",
     "badge": "Turing Starter",
+    "lessons": [
+      {
+        "title": "1. Was ist Informatik & was ist ein Algorithmus? (Folie 1–50)",
+        "content": `
+          <p>Informatik 1 bei Prof. Wamser ist die theoretische und technische Grundlage der Computertechnik. Im Zentrum steht der Begriff des <strong>Algorithmus</strong>:</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <h4>🎯 Definition</h4>
+              <p>Ein Algorithmus ist eine <strong>geordnete Menge von eindeutigen, ausführbaren Schritten</strong>, welcher nach einer <strong>endlichen Anzahl von Schritten terminiert</strong>.</p>
+            </div>
+            <div class="concept-card">
+              <h4>⚙️ Finitheit</h4>
+              <p><strong>Statisch:</strong> Der Text/die Beschreibung ist endlich.<br><strong>Dynamisch:</strong> Zur Laufzeit wird nur endlich viel Speicher/Ressourcen verbraucht.</p>
+            </div>
+            <div class="concept-card">
+              <h4>🔁 Determinismus vs. Determiniertheit</h4>
+              <p><strong>Determinismus:</strong> Jeder Einzelschritt steht fest.<br><strong>Determiniertheit:</strong> Gleiche Eingaben erzeugen garantiert dasselbe Endergebnis!</p>
+            </div>
+          </div>
+          <div class="trap-box">
+            <strong>💡 Euklidischer Algorithmus (ggT):</strong> Für zwei Zahlen <code>a &ge; b</code> gilt <code>ggT(a, b) = ggT(b, a mod b)</code>. Man teilt mit Rest, bis der Rest 0 ist!
+          </div>
+        `
+      }
+    ],
     "quizzes": [
       {
         "id": "inf_w1_q1",
@@ -143,12 +172,18 @@ window.INF_WORLDS = [
         "Ausgabe des letzten Werts von b als größter gemeinsamer Teiler"
       ]
     },
-    "boss": {
-      "title": "Praxis-Prüfung: Euklidischer Algorithmus (ggT)",
-      "description": "Implementiere den Euklidischen Algorithmus in C für zwei gegebene Zahlen a und b aus stdin. Berechne ihren ggT und gib das Ergebnis aus!",
-      "starterCode": "#include <stdio.h>\n\nint main(void) {\n    int a, b;\n    if (scanf(\"%d %d\", &a, &b) != 2) return 1;\n\n    while (b != 0) {\n        int r = a % b;\n        a = b;\n        b = r;\n    }\n\n    printf(\"%d\\n\", a);\n    return 0;\n}",
-      "stdin": "3054 1002",
-      "expectedOutput": "6"
+    "interactive": {
+      "type": "steptrace",
+      "title": "Interaktiver Ablauf: Euklidischer Algorithmus (ggT-Trace)",
+      "instruction": "Führe den Euklidischen Algorithmus für a = 3054 und b = 1002 Schritt für Schritt durch, indem du die Modulo-Reste berechnest:",
+      "fields": [
+        { "label": "Schritt 1: 3054 mod 1002 =", "expected": "48", "placeholder": "Divisionsrest eintragen" },
+        { "label": "Schritt 2: 1002 mod 48 =", "expected": "42", "placeholder": "Divisionsrest eintragen" },
+        { "label": "Schritt 3: 48 mod 42 =", "expected": "6", "placeholder": "Divisionsrest eintragen" },
+        { "label": "Schritt 4: 42 mod 6 =", "expected": "0", "placeholder": "Rest eintragen" },
+        { "label": "Endergebnis ggT(3054, 1002) =", "expected": "6", "placeholder": "Größter gemeinsamer Teiler" }
+      ],
+      "explanation": "Perfekt! 3054 mod 1002 = 48 -> 1002 mod 48 = 42 -> 48 mod 42 = 6 -> 42 mod 6 = 0. Der letzte Teiler ungleich 0 ist 6."
     }
   },
   {
@@ -156,6 +191,28 @@ window.INF_WORLDS = [
     "num": 2,
     "title": "Informationsdarstellung & Stellenwertsysteme",
     "badge": "Binary Master",
+    "lessons": [
+      {
+        "title": "Zahlensysteme: Dual, Hexadezimal & Dezimal (Folie 51–80)",
+        "content": `
+          <p>Rechner kennen nur Bits (0 und 1). Jedes Stellenwertsystem basiert auf einer Basis <strong>B</strong>:</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <h4>🔢 Dualsystem (Basis 2)</h4>
+              <p>Ziffern: 0, 1. Stellenwerte: 2^0=1, 2^1=2, 2^2=4, 2^3=8, 2^4=16, 2^5=32, 2^6=64, 2^7=128...</p>
+            </div>
+            <div class="concept-card">
+              <h4>🔠 Hexadezimalsystem (Basis 16)</h4>
+              <p>Ziffern 0–9 und A(10), B(11), C(12), D(13), E(14), F(15). <strong>Jede Hex-Ziffer entspricht exakt 4 Binär-Bits!</strong></p>
+            </div>
+            <div class="concept-card">
+              <h4>➗ Fortlaufende Division</h4>
+              <p>Dezimal zu Dual: Teile fortlaufend durch 2, schreibe den Rest (0 oder 1) auf und lies die Reste von unten nach oben!</p>
+            </div>
+          </div>
+        `
+      }
+    ],
     "quizzes": [
       {
         "id": "inf_w2_q1",
@@ -218,12 +275,17 @@ window.INF_WORLDS = [
         "Lies alle notierten Reste von unten nach oben (vom letzten Rest zum ersten Rest)"
       ]
     },
-    "boss": {
-      "title": "Praxis-Prüfung: Dezimal zu Binär Umrechner",
-      "description": "Schreibe ein C-Programm, das eine positive Dezimalzahl aus stdin einliest und als 8-Bit-Binärzahl ausgibt!",
-      "starterCode": "#include <stdio.h>\n\nint main(void) {\n    int n;\n    if (scanf(\"%d\", &n) != 1) return 1;\n\n    for (int i = 7; i >= 0; i--) {\n        int bit = (n >> i) & 1;\n        printf(\"%d\", bit);\n    }\n    printf(\"\\n\");\n    return 0;\n}",
-      "stdin": "139",
-      "expectedOutput": "10001011"
+    "interactive": {
+      "type": "steptrace",
+      "title": "Interaktive Klausurübung: Stellenwertsysteme umrechnen",
+      "instruction": "Führe die direkten Umrechnungen zwischen Dual, Hexadezimal und Dezimal durch:",
+      "fields": [
+        { "label": "Dezimal 139 in 8-Bit Binär:", "expected": "10001011", "placeholder": "z.B. 10001011" },
+        { "label": "Hexadezimal 0x1AF in Dezimal:", "expected": "431", "placeholder": "z.B. 431" },
+        { "label": "Hexadezimal 0x3C in Binär (8 Bits):", "expected": "00111100", "placeholder": "z.B. 00111100" },
+        { "label": "Binär 11110100 in Hexadezimal (ohne 0x):", "expected": "F4", "placeholder": "z.B. F4" }
+      ],
+      "explanation": "Klasse! 139 = 128+8+2+1 = 10001011_2. 1AF_16 = 256 + 160 + 15 = 431. 3C_16 = 0011 1100. 1111 0100 = F4_16."
     }
   },
   {
@@ -231,6 +293,28 @@ window.INF_WORLDS = [
     "num": 3,
     "title": "Negative Zahlen & Zweierkomplement",
     "badge": "Two Complement Pro",
+    "lessons": [
+      {
+        "title": "Vorzeichen und Zweierkomplement (Folie 81–105)",
+        "content": `
+          <p>Wie speichert ein Computer Minuszahlen? Frühere Versuche mit Vorzeichenbit (Sign-Magnitude) hatten zwei Nullen (+0 und -0) und erforderten komplizierte Schaltungen.</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <h4>⚡ Das Zweierkomplement</h4>
+              <p>1. Positive Zahl binär auf n Bits notieren.<br>2. Alle Bits umdrehen (Einerkomplement).<br>3. <strong>Eins addieren (+1)</strong>.</p>
+            </div>
+            <div class="concept-card">
+              <h4>🎯 Genialer Vorteil</h4>
+              <p>Subtraktion ist identisch mit Addition: <code>a - b = a + (-b)</code>! Ein einziges Addierwerk in der CPU erledigt Plus und Minus.</p>
+            </div>
+            <div class="concept-card">
+              <h4>⚠️ Arithmetischer Überlauf</h4>
+              <p>8-Bit Wertebereich: <strong>-128 bis +127</strong>. Werden zwei positive Zahlen addiert und das MSB wird 1 (negativ), ist die Zahl übergelaufen!</p>
+            </div>
+          </div>
+        `
+      }
+    ],
     "quizzes": [
       {
         "id": "inf_w3_q1",
@@ -293,12 +377,17 @@ window.INF_WORLDS = [
         "Prüfe: Das höchstwertige Bit (MSB) ist 1, was eine negative Zahl signalisiert"
       ]
     },
-    "boss": {
-      "title": "Praxis-Prüfung: Zweierkomplement-Rechner",
-      "description": "Schreibe ein C-Programm, das eine negative Zahl n aus stdin einliest und ihr 8-Bit-Zweierkomplement als Binärstring ausgibt!",
-      "starterCode": "#include <stdio.h>\n\nint main(void) {\n    int n;\n    if (scanf(\"%d\", &n) != 1) return 1;\n\n    unsigned char byte = (unsigned char)n;\n    for (int i = 7; i >= 0; i--) {\n        printf(\"%d\", (byte >> i) & 1);\n    }\n    printf(\"\\n\");\n    return 0;\n}",
-      "stdin": "-25",
-      "expectedOutput": "11100111"
+    "interactive": {
+      "type": "steptrace",
+      "title": "Interaktives Zweierkomplement-Rechenlabor",
+      "instruction": "Berechne das Zweierkomplement und die Subtraktion per Addition:",
+      "fields": [
+        { "label": "Schritt 1: Betrag 25 als 8-Bit Binär:", "expected": "00011001", "placeholder": "8 Bits" },
+        { "label": "Schritt 2: Einerkomplement (invertiert):", "expected": "11100110", "placeholder": "8 Bits" },
+        { "label": "Schritt 3: + 1 addiert (Zweierkomplement -25):", "expected": "11100111", "placeholder": "8 Bits" },
+        { "label": "Schritt 4: Welcher Dezimalzahl entspricht 11111111 im 8-Bit Zweierkomplement?", "expected": "-1", "placeholder": "Vorzeichen und Zahl eintragen" }
+      ],
+      "explanation": "Richtig gerechnet! 11100111 entspricht -25. Und 11111111 im Zweierkomplement ist -1 (das Invertieren ergibt 00000000 + 1 = 1 mit Minus davor)."
     }
   },
   {
@@ -306,6 +395,28 @@ window.INF_WORLDS = [
     "num": 4,
     "title": "Festkomma & Gleitkomma (IEEE 754)",
     "badge": "Float Architect",
+    "lessons": [
+      {
+        "title": "Rationale Zahlen: Festkomma & Gleitkomma (Folie 106–134)",
+        "content": `
+          <p>Kommazahlen im Rechner existieren in zwei Formen:</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <h4>🎯 Festkommazahlen</h4>
+              <p>Feste Trennung zwischen Vorkomma- und Nachkommastellen. Nachkommastellen umwandeln: <strong>Fortlaufende Multiplikation mit 2</strong>. Überträge vor dem Komma (0 oder 1) notieren!</p>
+            </div>
+            <div class="concept-card">
+              <h4>🔬 IEEE 754 HP-16</h4>
+              <p><strong>16 Bit gesamt:</strong><br>• 1 Bit Vorzeichen (s)<br>• 5 Bit Exponent (Bias 15)<br>• 10 Bit Mantisse (mit <strong>Hidden Bit 1.xxx</strong>)</p>
+            </div>
+            <div class="concept-card">
+              <h4>⚠️ Periodische Brüche</h4>
+              <p>Zahlen wie 0.6 oder 0.1 sind im Dualsystem unendlich periodisch (.10011001...) und führen zu unausweichlichen Rundungsfehlern!</p>
+            </div>
+          </div>
+        `
+      }
+    ],
     "quizzes": [
       {
         "id": "inf_w4_q1",
@@ -368,12 +479,17 @@ window.INF_WORLDS = [
         "Ergebnis: 1 10010 0100110000"
       ]
     },
-    "boss": {
-      "title": "Praxis-Prüfung: Festkomma-Multiplikation",
-      "description": "Schreibe ein C-Programm, das für eine eingegebene Dezimalzahl zwischen 0 und 1 (z. B. 0.8125) die ersten 4 Binär-Nachkommastellen berechnet und ausgibt!",
-      "starterCode": "#include <stdio.h>\n\nint main(void) {\n    double val;\n    if (scanf(\"%lf\", &val) != 1) return 1;\n\n    for (int i = 0; i < 4; i++) {\n        val *= 2.0;\n        int bit = (int)val;\n        printf(\"%d\", bit);\n        if (val >= 1.0) val -= 1.0;\n    }\n    printf(\"\\n\");\n    return 0;\n}",
-      "stdin": "0.8125",
-      "expectedOutput": "1101"
+    "interactive": {
+      "type": "steptrace",
+      "title": "Interaktiver IEEE 754 Bit-Rechner (Halbe Genauigkeit)",
+      "instruction": "Bestimme die einzelnen Bitfelder für die Zahl 7.5_10 im IEEE 754 HP-16 Format:",
+      "fields": [
+        { "label": "Vorzeichen-Bit s (0=positiv, 1=negativ):", "expected": "0", "placeholder": "0 oder 1" },
+        { "label": "Wahrer Exponent e (7.5 = 1.111 * 2^e):", "expected": "2", "placeholder": "Zahl" },
+        { "label": "Gespeicherter Exponent E = e + 15 als 5-Bit Binär:", "expected": "10001", "placeholder": "5 Bits" },
+        { "label": "Mantisse M (10 Bits ohne Hidden Bit 1):", "expected": "1110000000", "placeholder": "10 Bits" }
+      ],
+      "explanation": "Perfekt! 7.5 = 111.1_2 = 1.111 * 2^2. s = 0. E = 2 + 15 = 17 = 10001_2. Mantisse = 1110000000 (die führende 1 ist das Hidden Bit!)."
     }
   },
   {
@@ -381,6 +497,28 @@ window.INF_WORLDS = [
     "num": 5,
     "title": "Digitaltechnik & Transistoren",
     "badge": "Silicon Engineer",
+    "lessons": [
+      {
+        "title": "Halbleiter, MOS-Transistoren & CMOS (Folie 135–182)",
+        "content": `
+          <p>Alle Computer bestehen heute aus Milliarden winziger Schalter: den <strong>MOSFET-Transistoren</strong>.</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <h4>🟢 n-MOS Transistor</h4>
+              <p>Selbstsperrend. Schaltet durch (leitet Strom), wenn am Gate eine <strong>positive Spannung (High / 1)</strong> anliegt.</p>
+            </div>
+            <div class="concept-card">
+              <h4>🔴 p-MOS Transistor</h4>
+              <p>Komplementär zu n-MOS. Schaltet durch, wenn am Gate <strong>0 Volt (Low / 0)</strong> anliegt.</p>
+            </div>
+            <div class="concept-card">
+              <h4>⚡ Der CMOS-Inverter</h4>
+              <p>Kombiniert p-MOS oben (nach Vdd) und n-MOS unten (nach Masse). Da immer einer sperrt, verbraucht CMOS fast <strong>nur beim Schalten Strom</strong>!</p>
+            </div>
+          </div>
+        `
+      }
+    ],
     "quizzes": [
       {
         "id": "inf_w5_q1",
@@ -443,12 +581,17 @@ window.INF_WORLDS = [
         "Die Ausgangsspannung sinkt auf 0V (logisch 0) -> Invertierung vollendet"
       ]
     },
-    "boss": {
-      "title": "Praxis-Prüfung: CMOS-Inverter Simulator in C",
-      "description": "Implementiere eine C-Funktion, die das Verhalten eines CMOS-Inverters simuliert: Bei Eingabe 1 soll 0 ausgegeben werden, bei 0 soll 1 ausgegeben werden!",
-      "starterCode": "#include <stdio.h>\n\nint cmos_inverter(int in) {\n    return in ? 0 : 1;\n}\n\nint main(void) {\n    int input;\n    if (scanf(\"%d\", &input) != 1) return 1;\n    printf(\"%d\\n\", cmos_inverter(input));\n    return 0;\n}",
-      "stdin": "1",
-      "expectedOutput": "0"
+    "interactive": {
+      "type": "steptrace",
+      "title": "Interaktive CMOS-Gatter Schaltungsanalyse",
+      "instruction": "Bestimme den Zustand der Transistoren und des Ausgangs im CMOS-Inverter:",
+      "fields": [
+        { "label": "Eingang = 0V: Leitet n-MOS oder p-MOS?", "expected": "p-MOS", "placeholder": "n-MOS oder p-MOS" },
+        { "label": "Eingang = 0V: Welcher logische Pegel liegt am Ausgang an?", "expected": "1", "placeholder": "0 oder 1" },
+        { "label": "Eingang = 5V: Leitet n-MOS oder p-MOS?", "expected": "n-MOS", "placeholder": "n-MOS oder p-MOS" },
+        { "label": "Eingang = 5V: Welcher logische Pegel liegt am Ausgang an?", "expected": "0", "placeholder": "0 oder 1" }
+      ],
+      "explanation": "Exzellent verstanden! Bei Eingang 0 leitet der p-MOS nach Vdd (Ausgang 1). Bei Eingang 1 leitet der n-MOS nach Masse GND (Ausgang 0)."
     }
   },
   {
@@ -456,6 +599,28 @@ window.INF_WORLDS = [
     "num": 6,
     "title": "Boolesche Algebra, Schaltungen & KV-Diagramme",
     "badge": "Logic Mastermind",
+    "lessons": [
+      {
+        "title": "Schaltalgebra & Schaltungsentwurf (Folie 183–311)",
+        "content": `
+          <p>Das größte und wichtigste Kapitel für die Informatik-Klausur!</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <h4>📜 Rechenregeln & De Morgan</h4>
+              <p><code>NOT(a AND b) = NOT(a) OR NOT(b)</code><br><code>NOT(a OR b) = NOT(a) AND NOT(b)</code><br>Strich teilen und Rechenzeichen umdrehen!</p>
+            </div>
+            <div class="concept-card">
+              <h4>🗺️ KV-Diagramme</h4>
+              <p>Minimierung ohne Formel-Fehler: Eintragen nach Gray-Code, Bildung rechteckiger <strong>2er-Potenz-Blöcke (1, 2, 4, 8)</strong> über Ränder hinweg!</p>
+            </div>
+            <div class="concept-card">
+              <h4>⚡ Halb- und Volladdierer</h4>
+              <p><strong>Halbaddierer:</strong> Summe = <code>a XOR b</code>, Übertrag = <code>a AND b</code>.<br><strong>Volladdierer:</strong> Addiert 3 Bits (a, b, c_in) mit Summe und c_out.</p>
+            </div>
+          </div>
+        `
+      }
+    ],
     "quizzes": [
       {
         "id": "inf_w6_q1",
@@ -518,12 +683,18 @@ window.INF_WORLDS = [
         "Verknüpfe die resultierenden Terme disjunktiv (mit ODER) zur minimalen Schaltfunktion"
       ]
     },
-    "boss": {
-      "title": "Praxis-Prüfung: Volladdierer Logik in C",
-      "description": "Implementiere die Logik eines Volladdierers (Full Adder) in C: Drei Bits a, b und c_in einlesen, Summe s und Carry c_out berechnen und ausgeben!",
-      "starterCode": "#include <stdio.h>\n\nint main(void) {\n    int a, b, cin;\n    if (scanf(\"%d %d %d\", &a, &b, &cin) != 3) return 1;\n\n    int sum = a ^ b ^ cin;\n    int cout = (a & b) | (cin & (a ^ b));\n\n    printf(\"%d %d\\n\", sum, cout);\n    return 0;\n}",
-      "stdin": "1 1 1",
-      "expectedOutput": "1 1"
+    "interactive": {
+      "type": "steptrace",
+      "title": "Interaktive Logik-Prüfung: Wahrheitstabelle & Halbaddierer",
+      "instruction": "Fülle die Ausgänge für Summe s (a XOR b) und Übertrag c (a AND b) des Halbaddierers aus:",
+      "fields": [
+        { "label": "Eingänge a=0, b=0 -> Summe s:", "expected": "0", "placeholder": "0 oder 1" },
+        { "label": "Eingänge a=0, b=0 -> Übertrag c:", "expected": "0", "placeholder": "0 oder 1" },
+        { "label": "Eingänge a=1, b=0 -> Summe s:", "expected": "1", "placeholder": "0 oder 1" },
+        { "label": "Eingänge a=1, b=1 -> Summe s:", "expected": "0", "placeholder": "0 oder 1" },
+        { "label": "Eingänge a=1, b=1 -> Übertrag c:", "expected": "1", "placeholder": "0 oder 1" }
+      ],
+      "explanation": "Absolut richtig! Beim Halbaddierer ist Summe = a XOR b (0, 1, 1, 0) und Übertrag = a AND b (0, 0, 0, 1)."
     }
   }
 ];
